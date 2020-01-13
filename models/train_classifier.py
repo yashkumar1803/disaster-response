@@ -13,7 +13,13 @@ import pickle
 from collections import Counter
 import string
 
+
+
 def remove_words(corpus):
+"""
+    Words which are used only once are usually misspelled words and just act as
+    noisy features. They are irrelevant and are removed.
+"""
     word_counts = Counter()
     for sent in corpus.apply(lambda x: tokenize(x)):
         word_counts.update(sent)
@@ -23,20 +29,26 @@ def remove_words(corpus):
 
 
 def load_data(database_filepath):
+"""
+    Load database and return the features and labels matrix
+"""
     engine = create_engine("""sqlite:///""" +  database_filepath)
     
     df = pd.read_sql_table("DisasterResponse", engine).drop(["original", "genre"], axis=1)
     df = df.dropna(how="any")
     
     X = df["message"]
-    Y = df.drop(["message", "index", "id", "categories"], axis=1)
-    Y = Y.loc[:, Y.sum() != 0]
+    Y = df.drop(["message"], axis=1)
+    #Y = Y.loc[:, Y.sum() != 0]
     category_names = list(Y.columns)
     return X, Y, category_names
 
 
 def tokenize(text):
-    
+"""
+    Removing punctuation and apostrophes
+
+"""
     lemmatizer = WordNetLemmatizer()
     translator = str.maketrans(string.punctuation, ' '*len(string.punctuation))
     return text.replace("""'""", "").lower().translate(translator).split()
@@ -45,6 +57,10 @@ def tokenize(text):
 
 
 def build_model(X_train):
+"""
+    Built the model using Random Forest Classifier and built a modular
+    scikit-learn pipeline
+"""
     clf = RandomForestClassifier()
     mlt_outp = MultiOutputClassifier(clf)
     
@@ -62,6 +78,9 @@ def build_model(X_train):
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+"""
+    Evaluate the model using mean error parameter
+"""
 #     Calculate accuracy, precision, recall
 #     labels = np.unique(y_pred)
     Y_pred = model.predict(X_test)

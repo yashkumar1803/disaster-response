@@ -8,6 +8,9 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+"""
+    Inputs messages and categories datasets filepath and returns a joint dataframe
+"""
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     df = messages.merge(categories)
@@ -15,6 +18,9 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+"""
+    Takes raw dataframe and adds the labelled categories from the raw dataset 
+"""
     categories_split = df["categories"].str.split(";", expand=True)
     category_colnames = list(categories_split.loc[0].str.rsplit("-").apply(lambda x: x[0]))
     categories_split.columns = category_colnames
@@ -30,12 +36,15 @@ def clean_data(df):
     
     df = pd.concat([df, categories_split], axis=1).drop_duplicates()
  
-    return df
+    return df.drop(["id", "categories"], axis=1)
 
 
 def save_data(df, database_filename):
+"""
+    Save dataset as a SQL database
+"""
     engine = create_engine("""sqlite:///""" + database_filename)
-    df.to_sql("DisasterResponse", con=engine, if_exists="replace")
+    df.to_sql("DisasterResponse", con=engine, if_exists="replace", index=False)
     return
 
 
@@ -50,6 +59,7 @@ def main():
 
         print('Cleaning data...')
         df = clean_data(df)
+        print(df.head())
         print(df.columns)
         
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
